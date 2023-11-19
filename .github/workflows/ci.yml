@@ -1,0 +1,28 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+      - name: Add User Secrets
+        run: |
+          dotnet user-secrets set "Token" "${{ secrets.TEST_TOKEN }}" --project ./tests/Pointauc.Api.Tests
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore --configuration Debug
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
