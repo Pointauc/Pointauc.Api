@@ -6,7 +6,7 @@
 		<Authors>NowaLone, Kozjar</Authors>
 		<Description>An official .NET library for interacting with pointauc.com.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/NowaLone/Pointauc.Api</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/Pointauc/Pointauc.Api</PackageProjectUrl>
 		<UpdateAssemblyInfo Condition="'$(Configuration)'=='Debug'">false</UpdateAssemblyInfo>
 		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
 		<!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
