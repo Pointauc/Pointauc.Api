@@ -17,6 +17,8 @@ jobs:
           fetch-depth: 0
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x, 6.0x, 8.0.x
       - name: Add User Secrets
         run: |
           dotnet user-secrets set "Token" "${{ secrets.TEST_TOKEN }}" --project ./tests/Pointauc.Api.Tests
