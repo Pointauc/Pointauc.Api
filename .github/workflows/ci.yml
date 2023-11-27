@@ -15,8 +15,18 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Setup .NET
+      - name: Setup .NET 5.0.x
         uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - name: Setup .NET 6.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+      - name: Setup .NET 8.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.x
       - name: Add User Secrets
         run: |
           dotnet user-secrets set "Token" "${{ secrets.TEST_TOKEN }}" --project ./tests/Pointauc.Api.Tests
