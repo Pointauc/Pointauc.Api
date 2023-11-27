@@ -8,7 +8,7 @@ Support author of https://pointauc.com [@kozjar](https://github.com/Kozjar)
 
 # Download
 
-[NuGet](https://www.nuget.org/packages/Pointauc.Api)
+[![Nuget](https://img.shields.io/nuget/v/Pointauc.Api.svg?logo=nuget)](https://www.nuget.org/packages/Pointauc.Api)
 
 # Example
 
