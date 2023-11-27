@@ -15,6 +15,11 @@
 		public string Id { get; set; }
 
 		/// <summary>
+		/// Unique user identifier who made this bid. It will be stored in a lot data and can be used later for search and filtering.
+		/// </summary>
+		public string InvestorId { get; set; }
+
+		/// <summary>
 		/// Adds donation styles to the card. Cost will be multiplied by currency/points ratio.
 		/// </summary>
 		public bool? IsDonation { get; set; }

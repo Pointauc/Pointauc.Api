@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Pointauc.Api.Tests
@@ -80,7 +81,7 @@ namespace Pointauc.Api.Tests
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.Bids))]
-		public async Task Bids_WithEmpty_ShouldThrow()
+		public async Task Bids_WithEmpty_ShouldSuccess()
 		{
 			// Arrange
 			var client = new PointaucClient(config.GetSection("Token").Value);
@@ -92,5 +93,105 @@ namespace Pointauc.Api.Tests
 		}
 
 		#endregion Bids
+
+		#region GetAllLots
+
+		[TestMethod]
+		[TestCategory(nameof(PointaucClient))]
+		[TestCategory(nameof(PointaucClient.GetAllLots))]
+		public async Task GetAllLots_WithActualLots_ShouldSuccess()
+		{
+			// Arrange
+			var client = new PointaucClient(config.GetSection("Token").Value);
+
+			var bid = new Bid()
+			{
+				Cost = 100,
+				Message = nameof(GetAllLots_WithActualLots_ShouldSuccess),
+			};
+
+			// Act
+			await client.Bids(bid);
+
+			// The data is cached and updated every 5 seconds, so be aware that it may not always represent real-time data.
+			await Task.Delay(TimeSpan.FromSeconds(5));
+
+			var result = await client.GetAllLots();
+
+			// Assert
+			Assert.IsNotNull(result);
+			Assert.AreNotEqual(0, result.Count);
+			Assert.IsNotNull(result.FirstOrDefault(l => l.Name == bid.Message));
+
+			client.Dispose();
+		}
+
+		#endregion GetAllLots
+
+		#region ChangeLot
+
+		[TestMethod]
+		[TestCategory(nameof(PointaucClient))]
+		[TestCategory(nameof(PointaucClient.ChangeLot))]
+		public async Task ChangeLot_ByInvestorId_ShouldChangeLot()
+		{
+			// Arrange
+			var client = new PointaucClient(config.GetSection("Token").Value);
+
+			var bid = new Bid()
+			{
+				Cost = 100,
+				Message = nameof(ChangeLot_ByInvestorId_ShouldChangeLot),
+				InvestorId = nameof(ChangeLot_ByInvestorId_ShouldChangeLot),
+			};
+
+			// Act
+			await client.Bids(bid);
+			await client.ChangeLot(default, bid.InvestorId, new Lot() { Amount = 123, Name = $"{nameof(ChangeLot_ByInvestorId_ShouldChangeLot)}Changed" });
+
+			// The data is cached and updated every 5 seconds, so be aware that it may not always represent real-time data.
+			await Task.Delay(TimeSpan.FromSeconds(5));
+
+			var result = await client.GetAllLots();
+
+			// Assert
+			Assert.IsNotNull(result);
+			Assert.AreNotEqual(0, result.Count);
+			Assert.IsNotNull(result.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault());
+			Assert.AreEqual(123, result.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault().Amount);
+			Assert.AreEqual($"{nameof(ChangeLot_ByInvestorId_ShouldChangeLot)}Changed", result.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault().Name);
+
+			client.Dispose();
+		}
+
+		[TestMethod]
+		[TestCategory(nameof(PointaucClient))]
+		[TestCategory(nameof(PointaucClient.ChangeLot))]
+		public async Task ChangeLot_WithNullQuery_ShouldThrow()
+		{
+			// Arrange
+			var client = new PointaucClient(config.GetSection("Token").Value);
+
+			// Act
+			// Assert
+			await Assert.ThrowsExceptionAsync<ArgumentException>(() => client.ChangeLot(default, default, new Lot()));
+			client.Dispose();
+		}
+
+		[TestMethod]
+		[TestCategory(nameof(PointaucClient))]
+		[TestCategory(nameof(PointaucClient.ChangeLot))]
+		public async Task ChangeLot_WithNullLot_ShouldThrow()
+		{
+			// Arrange
+			var client = new PointaucClient(config.GetSection("Token").Value);
+
+			// Act
+			// Assert
+			await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => client.ChangeLot(nameof(ChangeLot_WithNullLot_ShouldThrow), nameof(ChangeLot_WithNullLot_ShouldThrow), default));
+			client.Dispose();
+		}
+
+		#endregion ChangeLot
 	}
 }
