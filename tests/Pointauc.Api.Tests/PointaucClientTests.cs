@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace Pointauc.Api.Tests
@@ -15,7 +18,22 @@ namespace Pointauc.Api.Tests
 		{
 			config = new ConfigurationBuilder().AddUserSecrets<PointaucClientTests>().Build();
 		}
+#if NET8_0_OR_GREATER
 
+		[TestMethod]
+		public void MyTestMethod()
+		{
+			var bid = new BidsRequest() { bids = new List<Bid> { new Bid { Cost = 123, Message = "test" } } };
+
+			var options = new JsonSerializerOptions
+			{
+				TypeInfoResolver = SourceGenerationContext.Default
+			};
+
+			var result = JsonSerializer.Serialize(bid, typeof(BidsRequest), options);
+			Console.WriteLine(result);
+		}
+#endif
 		#region Bids
 
 		[TestMethod]
@@ -48,13 +66,13 @@ namespace Pointauc.Api.Tests
 
 			var bid1 = new Bid()
 			{
-				Cost = 100,
+				Cost = 101,
 				Message = nameof(Bids_WithDefaultParams_ShouldSuccess),
 			};
 
 			var bid2 = new Bid()
 			{
-				Cost = 100,
+				Cost = 102,
 				Message = nameof(Bids_WithDefaultParams_ShouldSuccess),
 			};
 
