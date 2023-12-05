@@ -94,9 +94,9 @@ namespace Pointauc.Api
 
 		/// <inheritdoc/>
 		/// <exception cref="HttpRequestException"></exception>
-		public async Task<List<Lot>> GetAllLots(CancellationToken cancellationToken = default)
+		public async Task<LotsResponse> GetAllLots(CancellationToken cancellationToken = default)
 		{
-			using (var request = new HttpRequestMessage(HttpMethod.Get, "https://pointauc.com/api/oshino/lot/getAll"))
+			using (var request = new HttpRequestMessage(HttpMethod.Get, "https://pointauc.com/api/oshino/lots"))
 			{
 				using (var response = await httpClient.SendAsync(request).ConfigureAwait(false))
 				{
@@ -109,7 +109,7 @@ namespace Pointauc.Api
 #endif
 					{
 						response.EnsureSuccessStatusCode();
-						return await JsonSerializer.DeserializeAsync<List<Lot>>(utf8Json, options, cancellationToken).ConfigureAwait(false);
+						return await JsonSerializer.DeserializeAsync<LotsResponse>(utf8Json, options, cancellationToken).ConfigureAwait(false);
 					}
 				}
 			}

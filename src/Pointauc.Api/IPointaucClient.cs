@@ -32,7 +32,7 @@ namespace Pointauc.Api
 		/// </summary>
 		/// <param name="cancellationToken">The <see cref="CancellationToken"/> that can be used to cancel the write operation.</param>
 		/// <returns></returns>
-		Task<List<Lot>> GetAllLots(CancellationToken cancellationToken = default);
+		Task<LotsResponse> GetAllLots(CancellationToken cancellationToken = default);
 
 		/// <summary>
 		/// Will return the bid status by its id.
