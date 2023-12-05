@@ -127,6 +127,7 @@ namespace Pointauc.Api.Tests
 			{
 				Cost = 100,
 				Message = nameof(GetAllLots_WithActualLots_ShouldReturnLots),
+				InsertStrategy = InsertStrategy.Force
 			};
 
 			// Act
@@ -139,8 +140,9 @@ namespace Pointauc.Api.Tests
 
 			// Assert
 			Assert.IsNotNull(result);
-			Assert.AreNotEqual(0, result.Count);
-			Assert.IsNotNull(result.FirstOrDefault(l => l.Name == bid.Message));
+			Assert.IsNotNull(result.Lots);
+			Assert.AreNotEqual(0, result.Lots.Count);
+			Assert.IsNotNull(result.Lots.FirstOrDefault(l => l.Name == bid.Message));
 
 			client.Dispose();
 		}
@@ -162,6 +164,7 @@ namespace Pointauc.Api.Tests
 				Cost = 100,
 				Message = nameof(ChangeLot_ByInvestorId_ShouldChangeLot),
 				InvestorId = nameof(ChangeLot_ByInvestorId_ShouldChangeLot),
+				InsertStrategy = InsertStrategy.Force
 			};
 
 			// Act
@@ -175,10 +178,11 @@ namespace Pointauc.Api.Tests
 
 			// Assert
 			Assert.IsNotNull(result);
-			Assert.AreNotEqual(0, result.Count);
-			Assert.IsNotNull(result.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault());
-			Assert.AreEqual(123, result.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault().Amount);
-			Assert.AreEqual($"{nameof(ChangeLot_ByInvestorId_ShouldChangeLot)}Changed", result.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault().Name);
+			Assert.IsNotNull(result.Lots);
+			Assert.AreNotEqual(0, result.Lots.Count);
+			Assert.IsNotNull(result.Lots.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault());
+			Assert.AreEqual(123, result.Lots.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault().Amount);
+			Assert.AreEqual($"{nameof(ChangeLot_ByInvestorId_ShouldChangeLot)}Changed", result.Lots.Where(l => l.Investors != null && l.Investors.Any(i => i == bid.InvestorId)).FirstOrDefault().Name);
 
 			client.Dispose();
 		}
@@ -215,6 +219,7 @@ namespace Pointauc.Api.Tests
 
 		#region GetBidStatus
 
+		[Ignore("Unable to test without open pointauc")]
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.GetBidStatus))]
@@ -242,6 +247,7 @@ namespace Pointauc.Api.Tests
 			client.Dispose();
 		}
 
+		[Ignore("Unable to test without open pointauc")]
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.GetBidStatus))]
