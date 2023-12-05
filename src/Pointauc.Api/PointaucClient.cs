@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -13,12 +12,13 @@ namespace Pointauc.Api
 	/// <summary>
 	/// Provides a <see cref="IPointaucClient"/> implementation for interacting with <see href="https://pointauc.com"/> API.
 	/// </summary>
-	public class PointaucClient : IPointaucClient, IDisposable
+	public partial class PointaucClient : IPointaucClient, IDisposable
 	{
 		#region Fields
 
 		private readonly HttpClient httpClient;
 		private readonly JsonSerializerOptions options;
+		private bool disposed;
 
 		#endregion Fields
 
@@ -37,6 +37,9 @@ namespace Pointauc.Api
 			{
 				DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 				PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+#if NET8_0_OR_GREATER
+				TypeInfoResolver = /*JsonSerializer.IsReflectionEnabledByDefault ? new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver() : */SourceGenerationContext.Default
+#endif
 			};
 		}
 
@@ -44,6 +47,7 @@ namespace Pointauc.Api
 
 		#region Methods
 
+		/// <inheritdoc/>
 		/// <exception cref="ArgumentNullException"></exception>
 		public async Task Bids(CancellationToken cancellationToken = default, params Bid[] bids)
 		{
@@ -52,26 +56,32 @@ namespace Pointauc.Api
 				throw new ArgumentNullException(nameof(bids));
 			}
 
-			using (var stream = new MemoryStream())
+#if NET8_0_OR_GREATER
+			
+			BidsRequest bidsRequest = new BidsRequest { bids = bids };
+			var jsonString = JsonSerializer.Serialize(bidsRequest, SourceGenerationContext.Default.BidsRequest);
+#else
+			var jsonString = JsonSerializer.Serialize(new BidsRequest { bids = bids }, options);
+
+#endif
+
+			using (var streamContent = new StringContent(jsonString))
 			{
-				await JsonSerializer.SerializeAsync(stream, new { Bids = bids }, options, cancellationToken).ConfigureAwait(false);
-				stream.Seek(0, SeekOrigin.Begin);
+				streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
-				using (var streamContent = new StreamContent(stream))
+				using (var request = new HttpRequestMessage(HttpMethod.Post, "https://pointauc.com/api/oshino/bids") { Content = streamContent })
 				{
-					streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-					using (var request = new HttpRequestMessage(HttpMethod.Post, "https://pointauc.com/api/oshino/bids") { Content = streamContent })
+					using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
 					{
-						using (var response = await httpClient.SendAsync(request).ConfigureAwait(false))
-						{
-							response.EnsureSuccessStatusCode();
-						}
+						System.Diagnostics.Debug.WriteLine(response.RequestMessage.Content.ReadAsStringAsync().Result);
+
+						response.EnsureSuccessStatusCode();
 					}
 				}
 			}
 		}
 
+		/// <inheritdoc/>
 		/// <exception cref="ArgumentNullException"></exception>
 		public Task Bids(params Bid[] bids)
 		{
@@ -83,18 +93,25 @@ namespace Pointauc.Api
 		{
 			using (var request = new HttpRequestMessage(HttpMethod.Get, "https://pointauc.com/api/oshino/lot/getAll"))
 			{
-				using (var response = await httpClient.SendAsync(request).ConfigureAwait(false))
+				using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
 				{
 					response.EnsureSuccessStatusCode();
 
-					var utf8Json = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-					var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if NETSTANDARD2_0
+					var utf8Json = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
 
-					return await JsonSerializer.DeserializeAsync<List<Lot>>(utf8Json, options, cancellationToken).ConfigureAwait(false);
+					return JsonSerializer.Deserialize<List<Lot>>(new ReadOnlySpan<byte>(utf8Json), options);
+#else
+					using (var utf8Json = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+					{
+						return JsonSerializer.Deserialize<List<Lot>>(utf8Json, options);
+					}
+#endif
 				}
 			}
 		}
 
+		/// <inheritdoc/>
 		/// <exception cref="ArgumentNullException"></exception>
 		public async Task ChangeLot(string lotId, string investorId, Lot lot, CancellationToken cancellationToken = default)
 		{
@@ -108,26 +125,24 @@ namespace Pointauc.Api
 				throw new ArgumentNullException(nameof(lot));
 			}
 
-			using (var stream = new MemoryStream())
+			var jsonString = JsonSerializer.Serialize(new ChangeLotRequst { Query = new Query { Id = lotId, InvestorId = investorId }, Lot = lot }, options);
+
+			using (var streamContent = new StringContent(jsonString))
 			{
-				await JsonSerializer.SerializeAsync(stream, new { Query = new { Id = lotId, InvestorId = investorId }, Lot = lot }, options, cancellationToken).ConfigureAwait(false);
-				stream.Seek(0, SeekOrigin.Begin);
+				streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
-				using (var streamContent = new StreamContent(stream))
+				using (var request = new HttpRequestMessage(HttpMethod.Put, "https://pointauc.com/api/oshino/lot") { Content = streamContent })
 				{
-					streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-					using (var request = new HttpRequestMessage(HttpMethod.Put, "https://pointauc.com/api/oshino/lot") { Content = streamContent })
+					using (var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
 					{
-						using (var response = await httpClient.SendAsync(request).ConfigureAwait(false))
-						{
-							response.EnsureSuccessStatusCode();
-						}
+						System.Diagnostics.Debug.WriteLine(response.RequestMessage.Content.ReadAsStringAsync().Result);
+						response.EnsureSuccessStatusCode();
 					}
 				}
 			}
 		}
 
+		/// <inheritdoc/>
 		/// <exception cref="ArgumentNullException"></exception>
 		public Task ChangeLot(string lotId, string investorId, Lot lot)
 		{
@@ -137,7 +152,25 @@ namespace Pointauc.Api
 		/// <inheritdoc cref="IDisposable.Dispose"/>
 		public void Dispose()
 		{
-			httpClient.Dispose();
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		/// <summary>
+		/// Frees unmanaged resources. In the overload, the disposing parameter is a Boolean that indicates whether the method call comes from a Dispose method (its value is <see langword="true"/>) or from a finalizer (its value is <see langword="false"/>).
+		/// </summary>
+		/// <param name="disposing"><see langword="true"/> to indicate object should free unmanaged resources; otherwise, <see langword="false"/>.</param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing && !disposed)
+			{
+				disposed = true;
+
+				if (httpClient != null)
+				{
+					httpClient.Dispose();
+				}
+			}
 		}
 
 		#endregion Methods
