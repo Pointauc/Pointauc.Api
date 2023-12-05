@@ -21,7 +21,7 @@ namespace Pointauc.Api.Tests
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.Bids))]
-		public async Task Bids_WithDefaultParam_ShouldSuccess()
+		public async Task Bids_WithDefaultParam_ShouldReturnId()
 		{
 			// Arrange
 			var client = new PointaucClient(config.GetSection("Token").Value);
@@ -29,38 +29,53 @@ namespace Pointauc.Api.Tests
 			var bid = new Bid()
 			{
 				Cost = 100,
-				Message = nameof(Bids_WithDefaultParams_ShouldSuccess),
+				Message = nameof(Bids_WithDefaultParam_ShouldReturnId),
+				InsertStrategy = InsertStrategy.None
 			};
 
 			// Act
+			var result = await client.Bids(bid);
+
 			// Assert
-			await client.Bids(bid);
+			Assert.IsNotNull(result);
+			Assert.AreEqual(1, result.Count);
+			CollectionAssert.AllItemsAreNotNull(result);
+			CollectionAssert.DoesNotContain(result, string.Empty);
+
 			client.Dispose();
 		}
 
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.Bids))]
-		public async Task Bids_WithDefaultParams_ShouldSuccess()
+		public async Task Bids_WithDefaultParams_ShouldReturnId()
 		{
 			// Arrange
 			var client = new PointaucClient(config.GetSection("Token").Value);
 
 			var bid1 = new Bid()
 			{
-				Cost = 100,
-				Message = nameof(Bids_WithDefaultParams_ShouldSuccess),
+				Cost = 101,
+				Message = nameof(Bids_WithDefaultParams_ShouldReturnId),
+				InsertStrategy = InsertStrategy.None,
 			};
 
 			var bid2 = new Bid()
 			{
-				Cost = 100,
-				Message = nameof(Bids_WithDefaultParams_ShouldSuccess),
+				Cost = 102,
+				Message = nameof(Bids_WithDefaultParams_ShouldReturnId),
+				InsertStrategy = InsertStrategy.None,
 			};
 
 			// Act
+			var result = await client.Bids(bid1, bid2);
+
 			// Assert
-			await client.Bids(bid1, bid2);
+			Assert.IsNotNull(result);
+			Assert.AreEqual(2, result.Count);
+			CollectionAssert.AllItemsAreNotNull(result);
+			CollectionAssert.DoesNotContain(result, string.Empty);
+
 			client.Dispose();
 		}
 
@@ -81,14 +96,18 @@ namespace Pointauc.Api.Tests
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.Bids))]
-		public async Task Bids_WithEmpty_ShouldSuccess()
+		public async Task Bids_WithEmpty_ShouldNotReturnId()
 		{
 			// Arrange
 			var client = new PointaucClient(config.GetSection("Token").Value);
 
 			// Act
+			var result = await client.Bids(Array.Empty<Bid>());
+
 			// Assert
-			await client.Bids(Array.Empty<Bid>());
+			Assert.IsNotNull(result);
+			Assert.AreEqual(0, result.Count);
+
 			client.Dispose();
 		}
 
@@ -99,7 +118,7 @@ namespace Pointauc.Api.Tests
 		[TestMethod]
 		[TestCategory(nameof(PointaucClient))]
 		[TestCategory(nameof(PointaucClient.GetAllLots))]
-		public async Task GetAllLots_WithActualLots_ShouldSuccess()
+		public async Task GetAllLots_WithActualLots_ShouldReturnLots()
 		{
 			// Arrange
 			var client = new PointaucClient(config.GetSection("Token").Value);
@@ -107,7 +126,7 @@ namespace Pointauc.Api.Tests
 			var bid = new Bid()
 			{
 				Cost = 100,
-				Message = nameof(GetAllLots_WithActualLots_ShouldSuccess),
+				Message = nameof(GetAllLots_WithActualLots_ShouldReturnLots),
 			};
 
 			// Act
@@ -193,5 +212,65 @@ namespace Pointauc.Api.Tests
 		}
 
 		#endregion ChangeLot
+
+		#region GetBidStatus
+
+		[TestMethod]
+		[TestCategory(nameof(PointaucClient))]
+		[TestCategory(nameof(PointaucClient.GetBidStatus))]
+		public async Task GetBidStatus_WithoutLot_ShouldReturnOnlyStatus()
+		{
+			// Arrange
+			var client = new PointaucClient(config.GetSection("Token").Value);
+
+			var bid = new Bid()
+			{
+				Cost = 100,
+				Message = nameof(GetBidStatus_WithoutLot_ShouldReturnOnlyStatus),
+				InsertStrategy = InsertStrategy.None
+			};
+
+			// Act
+			var result = await client.Bids(bid);
+			var status = await client.GetBidStatus(result.First());
+
+			// Assert
+			Assert.IsNotNull(status);
+			Assert.AreEqual(Status.Pending, status.Status);
+			Assert.IsNull(status.Lot);
+
+			client.Dispose();
+		}
+
+		[TestMethod]
+		[TestCategory(nameof(PointaucClient))]
+		[TestCategory(nameof(PointaucClient.GetBidStatus))]
+		public async Task GetBidStatus_WithLot_ShouldReturnStatusWithLot()
+		{
+			// Arrange
+			var client = new PointaucClient(config.GetSection("Token").Value);
+
+			var bid = new Bid()
+			{
+				Cost = 100,
+				Message = nameof(GetBidStatus_WithLot_ShouldReturnStatusWithLot),
+				InsertStrategy = InsertStrategy.Force
+			};
+
+			// Act
+			var result = await client.Bids(bid);
+			var status = await client.GetBidStatus(result.First());
+
+			// Assert
+			Assert.IsNotNull(status);
+			Assert.AreEqual(Status.Pending, status.Status);
+			Assert.IsNotNull(status.Lot);
+			Assert.IsNotNull(status.Lot.Id);
+			Assert.AreNotEqual(string.Empty, status.Lot.Id);
+
+			client.Dispose();
+		}
+
+		#endregion GetBidStatus
 	}
 }

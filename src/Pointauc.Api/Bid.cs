@@ -20,6 +20,11 @@
 		public string InvestorId { get; set; }
 
 		/// <summary>
+		/// Describes how bid would be handled.
+		/// </summary>
+		public InsertStrategy? InsertStrategy { get; set; }
+
+		/// <summary>
 		/// Adds donation styles to the card. Cost will be multiplied by currency/points ratio.
 		/// </summary>
 		public bool? IsDonation { get; set; }
